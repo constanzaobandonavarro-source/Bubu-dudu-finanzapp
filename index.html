@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gastos">
+<title>Gastos Conny & Pablo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f1a; color: #e2e8f0; min-height: 100vh; padding-bottom: 30px; }
+
+  .header { background: #1a1a2e; padding: 52px 20px 20px; border-bottom: 1px solid #2d2d4e; }
+  .header h1 { font-size: 24px; font-weight: 700; color: #f8fafc; }
+  .header p { font-size: 11px; letter-spacing: 2px; color: #6366f1; text-transform: uppercase; margin-bottom: 4px; }
+
+  .body { padding: 20px; max-width: 480px; margin: 0 auto; }
+
+  .section { margin-bottom: 22px; }
+  .label { font-size: 10px; font-weight: 600; letter-spacing: 2px; color: #6366f1; text-transform: uppercase; margin-bottom: 10px; display: block; }
+
+  /* Tarjeta */
+  .chip-row { display: flex; gap: 10px; }
+  .chip-row .chip { flex: 1; padding: 13px 8px; border-radius: 12px; border: 1.5px solid #2d2d4e; background: #1a1a2e; color: #64748b; font-size: 15px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.15s; }
+
+  /* Categorías */
+  .chip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .chip-grid .chip { padding: 11px 8px; border-radius: 12px; border: 1.5px solid #2d2d4e; background: #1a1a2e; color: #64748b; font-size: 12px; cursor: pointer; text-align: left; line-height: 1.5; transition: all 0.15s; }
+  .chip-grid .chip.full { grid-column: span 2; }
+
+  /* Tipos */
+  .tipo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tipo-grid .chip { padding: 11px 8px; border-radius: 12px; border: 1.5px solid #2d2d4e; background: #1a1a2e; color: #64748b; font-size: 12px; cursor: pointer; text-align: center; line-height: 1.5; transition: all 0.15s; }
+  .tipo-grid .chip.full { grid-column: span 2; }
+
+  .chip:active { transform: scale(0.96); }
+
+  /* Inputs */
+  input[type=text], input[type=number] {
+    width: 100%; background: #1a1a2e; border: 1.5px solid #2d2d4e;
+    border-radius: 12px; padding: 14px 16px; color: #f8fafc;
+    font-size: 16px; outline: none; transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  input[type=text]:focus, input[type=number]:focus { border-color: #6366f1; }
+  input::placeholder { color: #3d3d5e; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Preview */
+  .preview {
+    background: #1a1a2e; border: 1px solid #2d2d4e; border-radius: 12px;
+    padding: 14px 16px; font-size: 13px; color: #64748b;
+    margin-bottom: 16px; min-height: 46px; line-height: 1.6;
+  }
+  .preview .tag { color: #a5b4fc; font-weight: 500; }
+  .preview .amt { color: #f8fafc; font-weight: 700; font-size: 15px; }
+
+  /* Cuota hint */
+  .cuota-hint { background: #1e1b4b; border: 1px solid #4338ca; border-radius: 10px; padding: 10px 14px; font-size: 12px; color: #a5b4fc; margin-top: 8px; display: none; }
+
+  /* Botón */
+  .btn-save {
+    width: 100%; padding: 16px; border-radius: 14px; border: none;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff; font-size: 17px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s; margin-top: 4px;
+  }
+  .btn-save:disabled { background: #1e1e2e; color: #3d3d5e; }
+  .btn-save:active { transform: scale(0.98); }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(100px);
+    background: #22c55e; color: #fff; border-radius: 50px;
+    padding: 12px 28px; font-size: 15px; font-weight: 600;
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 999; white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.error { background: #ef4444; }
+
+  /* Loading */
+  .spinner { display: none; width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Detalle opcional */
+  .detalle-toggle { font-size: 12px; color: #4b5563; cursor: pointer; margin-top: 8px; display: block; text-align: center; }
+  .detalle-toggle:hover { color: #6366f1; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <p>Conny & Pablo</p>
+  <h1>Registrar gasto 💳</h1>
+</div>
+
+<div class="body">
+
+  <!-- TARJETA -->
+  <div class="section">
+    <span class="label">Tarjeta</span>
+    <div class="chip-row" id="grp-tarjeta">
+      <button class="chip" data-val="CMR" data-color="#22c55e" onclick="sel(this,'tarjeta')">CMR</button>
+      <button class="chip" data-val="Cencosud" data-color="#f59e0b" onclick="sel(this,'tarjeta')">Cencosud</button>
+    </div>
+  </div>
+
+  <!-- COMERCIO -->
+  <div class="section">
+    <span class="label">Comercio</span>
+    <input type="text" id="comercio" placeholder="JUMBO, COPEC, NETFLIX…" oninput="this.value=this.value.toUpperCase();upd()" autocomplete="off" autocorrect="off" spellcheck="false" />
+  </div>
+
+  <!-- MONTO + CUOTAS -->
+  <div class="section">
+    <div class="row2">
+      <div>
+        <span class="label">Monto total</span>
+        <input type="number" id="monto" placeholder="0" inputmode="numeric" oninput="upd()" />
+      </div>
+      <div>
+        <span class="label">Cuotas</span>
+        <input type="number" id="cuotas" value="1" min="1" inputmode="numeric" oninput="upd()" />
+      </div>
+    </div>
+    <div class="cuota-hint" id="cuota-hint"></div>
+  </div>
+
+  <!-- CATEGORÍA -->
+  <div class="section">
+    <span class="label">Categoría</span>
+    <div class="chip-grid" id="grp-cat">
+      <button class="chip" data-val="🏡 Cuentas Casita" data-color="#f97316" onclick="sel(this,'cat')">🏡 Cuentas Casita</button>
+      <button class="chip" data-val="🛒 Supermercado en común" data-color="#f97316" onclick="sel(this,'cat')">🛒 Supermercado en común</button>
+      <button class="chip" data-val="🤝 Caprichos en común" data-color="#f97316" onclick="sel(this,'cat')">🤝 Caprichos en común</button>
+      <button class="chip" data-val="🐻 Gastos Pablo" data-color="#60a5fa" onclick="sel(this,'cat')">🐻 Gastos Pablo</button>
+      <button class="chip" data-val="🐣 Gastos Conny" data-color="#f9a8d4" onclick="sel(this,'cat')">🐣 Gastos Conny</button>
+      <button class="chip" data-val="🎀 Caprichos Conny" data-color="#ec4899" onclick="sel(this,'cat')">🎀 Caprichos Conny</button>
+      <button class="chip full" data-val="♣ No aporta" data-color="#9ca3af" onclick="sel(this,'cat')">♣ No aporta</button>
+    </div>
+  </div>
+
+  <!-- TIPO -->
+  <div class="section">
+    <span class="label">Tipo de gasto</span>
+    <div class="tipo-grid" id="grp-tipo">
+      <button class="chip" data-val="🏠 Fijo" data-color="#818cf8" onclick="sel(this,'tipo')">🏠 Fijo</button>
+      <button class="chip" data-val="🛒 Planificado" data-color="#34d399" onclick="sel(this,'tipo')">🛒 Planificado</button>
+      <button class="chip" data-val="🍬 Capricho" data-color="#f472b6" onclick="sel(this,'tipo')">🍬 Capricho</button>
+      <button class="chip" data-val="🚨 Urgencia" data-color="#fb923c" onclick="sel(this,'tipo')">🚨 Urgencia</button>
+      <button class="chip full" data-val="🎁 Especial" data-color="#fbbf24" onclick="sel(this,'tipo')">🎁 Especial</button>
+    </div>
+  </div>
+
+  <!-- DETALLE OPCIONAL -->
+  <div class="section" id="sec-detalle" style="display:none;">
+    <span class="label">Detalle (opcional)</span>
+    <input type="text" id="detalle" placeholder="Ej: regalo cumple mamá, snack U…" />
+  </div>
+  <span class="detalle-toggle" onclick="toggleDetalle()">+ agregar detalle</span>
+
+  <!-- PREVIEW -->
+  <div class="preview" id="preview">Completa los campos para ver el resumen…</div>
+
+  <!-- BOTÓN -->
+  <button class="btn-save" id="btnSave" disabled onclick="guardar()">
+    <span id="btnText">Registrar gasto</span>
+    <div class="spinner" id="spinner"></div>
+  </button>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3ElXmR_p0CB9VvXa3hEQ2hoeGqVPJ630iPEM6pJLoQQvxXH8Irm9VZAvqOlB74Cuu_w/exec";
+const CLAVE = "connyponny2026";
+
+const state = { tarjeta: null, cat: null, tipo: null };
+
+function sel(el, key) {
+  const grp = { tarjeta: 'grp-tarjeta', cat: 'grp-cat', tipo: 'grp-tipo' }[key];
+  document.querySelectorAll(`#${grp} .chip`).forEach(c => {
+    c.style.borderColor = ''; c.style.background = ''; c.style.color = '';
+  });
+  state[key] = el.dataset.val;
+  const color = el.dataset.color || '#6366f1';
+  el.style.borderColor = color;
+  el.style.background = color + '22';
+  el.style.color = color;
+  upd();
+}
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString('es-CL'); }
+
+function upd() {
+  const comercio = document.getElementById('comercio').value;
+  const monto = parseFloat(document.getElementById('monto').value) || 0;
+  const cuotas = parseInt(document.getElementById('cuotas').value) || 1;
+  const cuotaVal = cuotas > 1 ? Math.round(monto / cuotas) : monto;
+
+  // Hint de cuotas
+  const hint = document.getElementById('cuota-hint');
+  if (monto > 0 && cuotas > 1) {
+    hint.style.display = 'block';
+    hint.textContent = `💡 ${cuotas} cuotas de ${fmt(cuotaVal)} sin interés`;
+  } else {
+    hint.style.display = 'none';
+  }
+
+  // Preview
+  const parts = [];
+  if (state.tarjeta) parts.push(`<span class="tag">${state.tarjeta}</span>`);
+  if (comercio) parts.push(`<span class="tag">${comercio}</span>`);
+  if (monto > 0) parts.push(`<span class="amt">${cuotas > 1 ? fmt(monto) + ` (${cuotas}c × ${fmt(cuotaVal)})` : fmt(monto)}</span>`);
+  if (state.cat) parts.push(`<span class="tag">${state.cat}</span>`);
+  if (state.tipo) parts.push(`<span class="tag">${state.tipo}</span>`);
+
+  document.getElementById('preview').innerHTML = parts.length
+    ? parts.join(' · ')
+    : 'Completa los campos para ver el resumen…';
+
+  const ok = state.tarjeta && state.cat && state.tipo && comercio && monto > 0;
+  document.getElementById('btnSave').disabled = !ok;
+}
+
+function toggleDetalle() {
+  const sec = document.getElementById('sec-detalle');
+  const tog = document.querySelector('.detalle-toggle');
+  const visible = sec.style.display !== 'none';
+  sec.style.display = visible ? 'none' : 'block';
+  tog.textContent = visible ? '+ agregar detalle' : '− quitar detalle';
+}
+
+async function guardar() {
+  document.getElementById('btnText').style.display = 'none';
+  document.getElementById('spinner').style.display = 'block';
+  document.getElementById('btnSave').disabled = true;
+
+  const payload = {
+    clave: CLAVE,
+    tarjeta: state.tarjeta,
+    comercio: document.getElementById('comercio').value,
+    monto: parseFloat(document.getElementById('monto').value),
+    cuotas: parseInt(document.getElementById('cuotas').value) || 1,
+    categoria: state.cat,
+    tipo: state.tipo,
+    detalle: document.getElementById('detalle').value || ""
+  };
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    showToast('✓ Guardado en tu planilla', false);
+    resetForm();
+  } catch (err) {
+    showToast('Error de conexión — intenta de nuevo', true);
+    document.getElementById('btnSave').disabled = false;
+  }
+
+  document.getElementById('btnText').style.display = 'block';
+  document.getElementById('spinner').style.display = 'none';
+}
+
+function resetForm() {
+  document.getElementById('comercio').value = '';
+  document.getElementById('monto').value = '';
+  document.getElementById('cuotas').value = '1';
+  document.getElementById('detalle').value = '';
+  document.getElementById('cuota-hint').style.display = 'none';
+  document.getElementById('sec-detalle').style.display = 'none';
+  document.querySelector('.detalle-toggle').textContent = '+ agregar detalle';
+  document.querySelectorAll('.chip').forEach(c => {
+    c.style.borderColor = ''; c.style.background = ''; c.style.color = '';
+  });
+  state.tarjeta = null; state.cat = null; state.tipo = null;
+  upd();
+}
+
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error' : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
